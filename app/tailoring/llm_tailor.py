@@ -16,9 +16,7 @@ def tailor_resume(job):
     job_desc = clean_html(job['description'])[:2000]
 
     prompt = f"""
-You are a professional resume writer.
-
-Rewrite resume bullets tailored for the job.
+Rewrite resume bullets for this job.
 
 JOB DESCRIPTION:
 {job_desc}
@@ -26,17 +24,17 @@ JOB DESCRIPTION:
 CANDIDATE SKILLS:
 {', '.join(resume['skills'])}
 
-STRICT RULES:
-- NEVER add percentages, numbers, or metrics unless explicitly provided
-- DO NOT guess achievements
-- Use only safe, realistic statements
-- Keep bullets concise (1–2 lines)
-- Focus on Python, AI, backend relevance
-
-Output ONLY 3 bullet points.
+Rules:
+- Output EXACTLY 3 bullet points
+- Each bullet must be 1.5–2 lines (not short, not too long)
+- Each bullet must follow THIS structure:
+  Action verb + what was built + technologies used + impact/result
+- Keep length consistent across all bullets
+- Avoid very long paragraphs
+- No intro text
+- No explanations
+- No phrases like "Here are" or "Based on"
 """
-    
-
     response = ollama.chat(
         model="llama3.1:8b",
         messages=[{"role": "user", "content": prompt}]

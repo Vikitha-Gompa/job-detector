@@ -1,27 +1,73 @@
 <html>
 <head>
 <style>
-body { font-family: Arial; margin: 40px; }
-h1 { margin-bottom: 5px; }
-h2 { border-bottom: 1px solid #ccc; }
-ul { margin-top: 5px; }
+body {
+    font-family: Arial, sans-serif;
+    margin: 25px;
+    font-size: 12px;
+    line-height: 1.5;
+    word-spacing: 1px;
+}
+
+h1 {
+    margin-bottom: 2px;
+    font-size: 18px;
+}
+
+h2 {
+    border-bottom: 1px solid #000;
+    font-size: 14px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+h3 {
+    margin-bottom: 2px;
+    font-size: 13px;
+}
+
+p {
+    margin: 2px 0;
+}
+
+ul {
+    margin: 2px 0 6px 15px;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 3px;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+}
 </style>
 </head>
 
 <body>
 
+<!-- HEADER -->
 <h1>{{name}}</h1>
-<p>{{title}}</p>
+<p><b>{{title}}</b></p>
 <p>{{email}} | {{location}}</p>
+
+<!-- SUMMARY -->
 <p>{{summary}}</p>
 
+<!-- SKILLS -->
 <h2>Skills</h2>
 <p>{{skills}}</p>
 
+<!-- EXPERIENCE -->
 <h2>Experience</h2>
 {% for exp in experience %}
-<h3>{{exp.role}} — {{exp.company}}</h3>
-<p>{{exp.dates}}</p>
+<div class="row">
+    <p><b>{{exp.role}} — {{exp.company}}</b></p>
+    <p>{{exp.dates}}</p>
+</div>
+
 <ul>
 {% for b in exp.bullets %}
 <li>{{b}}</li>
@@ -29,6 +75,7 @@ ul { margin-top: 5px; }
 </ul>
 {% endfor %}
 
+<!-- PROJECTS -->
 <h2>Projects</h2>
 {% for p in projects %}
 <h3>{{p.name}}</h3>
@@ -37,6 +84,15 @@ ul { margin-top: 5px; }
 <li>{{b}}</li>
 {% endfor %}
 </ul>
+{% endfor %}
+
+<!-- EDUCATION -->
+<h2>Education</h2>
+{% for edu in education %}
+<div class="row">
+    <p><b>{{edu.degree}}</b> - {{edu.school}}</p>
+    <p>{{edu.year}}</p>
+</div>
 {% endfor %}
 
 </body>
