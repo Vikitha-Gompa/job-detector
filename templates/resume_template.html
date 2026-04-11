@@ -1,0 +1,43 @@
+<html>
+<head>
+<style>
+body { font-family: Arial; margin: 40px; }
+h1 { margin-bottom: 5px; }
+h2 { border-bottom: 1px solid #ccc; }
+ul { margin-top: 5px; }
+</style>
+</head>
+
+<body>
+
+<h1>{{name}}</h1>
+<p>{{title}}</p>
+<p>{{email}} | {{location}}</p>
+<p>{{summary}}</p>
+
+<h2>Skills</h2>
+<p>{{skills}}</p>
+
+<h2>Experience</h2>
+{% for exp in experience %}
+<h3>{{exp.role}} — {{exp.company}}</h3>
+<p>{{exp.dates}}</p>
+<ul>
+{% for b in exp.bullets %}
+<li>{{b}}</li>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<h2>Projects</h2>
+{% for p in projects %}
+<h3>{{p.name}}</h3>
+<ul>
+{% for b in p.bullets %}
+<li>{{b}}</li>
+{% endfor %}
+</ul>
+{% endfor %}
+
+</body>
+</html>

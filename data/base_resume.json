@@ -1,0 +1,112 @@
+{
+  "name": "Sai Vikitha",
+  "title": "Software Engineer",
+  "email": "saivikitha14@gmail.com",
+  "location": "Oklahoma City, OK",
+  "phone": "4055146413",
+  "summary": "Software Engineer with expertise in Python, AI, and backend systems. Experienced in building scalable applications, developing machine learning solutions, and working with cloud infrastructure.",
+  
+  "skills": [
+    "Python", "Java", "C", "C++", "JavaScript", "TypeScript",
+    "LangChain", "LlamaIndex", "OpenAI APIs", "RAG", "NLP", "Generative AI",
+    "TensorFlow", "PyTorch",
+    "AWS", "Azure", "GCP", "Docker", "Kubernetes",
+    "MySQL", "MongoDB", "PostgreSQL",
+    "Flask", "Django", "Spring Boot", "React",
+    "REST APIs", "Microservices", "CI/CD"
+  ],
+
+  "experience": [
+    {
+      "company": "ImpacterAI",
+      "role": "Python AI Developer",
+      "dates": "July 2025 – Present",
+      "bullets": [
+        "Developed LLM-powered applications using Python, Flask, Django, and LangChain",
+        "Implemented RAG pipelines with embeddings and vector search",
+        "Designed cloud-based AI solutions using AWS and Azure",
+        "Built data pipelines and REST APIs with monitoring and testing"
+      ]
+    },
+    {
+      "company": "University of Central Oklahoma",
+      "role": "Graduate Research and IT Support",
+      "dates": "Jan 2024 – May 2025",
+      "bullets": [
+        "Developed backend systems using Java Spring Boot and MySQL",
+        "Built ETL pipelines and integrated Apache Kafka",
+        "Optimized system performance using C++ and Python",
+        "Improved operational efficiency through system enhancements"
+      ]
+    },
+    {
+      "company": "BrainoVision",
+      "role": "Frontend Developer",
+      "dates": "Jan 2022 – May 2023",
+      "bullets": [
+        "Developed responsive web applications using HTML, CSS, JavaScript",
+        "Improved UI/UX and reduced user errors",
+        "Enhanced performance and reduced load issues by 20%"
+      ]
+    },
+    {
+      "company": "Verzeo",
+      "role": "Cyber Security Intern",
+      "dates": "Aug 2021 – Dec 2021",
+      "bullets": [
+        "Performed vulnerability assessments using Metasploit and Burp Suite",
+        "Analyzed network traffic using Wireshark and Snort",
+        "Identified and mitigated security risks"
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "AI Agent Chatbot Platform",
+      "bullets": [
+        "Built LLM chatbot using LangChain and OpenAI",
+        "Implemented RAG with embeddings and vector search",
+        "Improved response accuracy by 30%",
+        "Deployed on Azure with API integrations"
+      ]
+    },
+    {
+      "name": "Facial Recognition Attendance System",
+      "bullets": [
+        "Built AI attendance system using OpenCV and TensorFlow",
+        "Improved accuracy and reduced manual work by 40%",
+        "Implemented backend logic and testing"
+      ]
+    },
+    {
+      "name": "Multi-Cloud Infrastructure System",
+      "bullets": [
+        "Provisioned infrastructure using Terraform on AWS and GCP",
+        "Built CI/CD pipelines using Jenkins",
+        "Used Docker and Kubernetes for scaling"
+      ]
+    },
+    {
+      "name": "Customer Data Portal",
+      "bullets": [
+        "Built full-stack portal using React, Node.js, Django",
+        "Implemented OAuth and JWT authentication",
+        "Designed scalable system architecture"
+      ]
+    }
+  ],
+
+  "education": [
+    {
+      "school": "University of Central Oklahoma",
+      "degree": "MS in Computer Science",
+      "year": "2025"
+    },
+    {
+      "school": "GITAM University",
+      "degree": "BTech in Computer Science",
+      "year": "2023"
+    }
+  ]
+}
