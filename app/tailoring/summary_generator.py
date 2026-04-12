@@ -13,21 +13,21 @@ def generate_summary(job):
     prompt = f"""
 Write a professional resume summary.
 
-JOB DESCRIPTION:
-{job['description'][:1500]}
-
-CANDIDATE SKILLS:
-{', '.join(resume['skills'])}
-
-Rules:
-- 3–4 lines
-- Focus on backend, AI/ML, and cloud systems
-- Include technologies (Python, AWS, etc.)
+STRICT RULES:
+- ONLY output the summary (no explanations)
+- 2–3 sentences only
+- No bullet points
 - No headings
-- No quotes
-- No explanations
-- Do NOT start with phrases like "Here is" or "This is"
-- Output ONLY the summary text
+- No meta commentary
+- No phrases like "this summary"
+
+Focus:
+- Backend engineering
+- AI / ML systems
+- Scalability and performance
+
+Job Description:
+{job.get("description", "")[:2000]}
 """
 
     response = ollama.chat(

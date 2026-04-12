@@ -4,6 +4,9 @@ from app.tailoring.llm_tailor import tailor_resume
 from app.tailoring.summary_generator import generate_summary
 
 
+# =========================
+# LOAD BASE RESUME
+# =========================
 def load_resume():
     with open("data/base_resume.json", encoding="utf-8") as f:
         return json.load(f)
@@ -14,119 +17,88 @@ def load_template():
         return Template(f.read())
 
 
+# =========================
+# CLEAN BULLETS (CONTROLLED)
+# =========================
 def clean_bullets(raw_text):
     bullets = []
 
     for line in raw_text.split("\n"):
         line = line.strip()
 
-        if (
-            line
-            and 70 < len(line) < 260
-            and not any(
-                line.lower().startswith(x)
-                for x in [
-                    "here",
-                    "note",
-                    "i've",
-                    "i have",
-                    "this",
-                    "these",
-                    "based on",
-                    "the following",
-                    "below are"
-                ]
-            )
-        ):
+        if line and len(line) > 40:
             cleaned = (
                 line.replace("**", "")
-                    .replace("’", "'")
-                    .strip("•-* ")
-                    .strip()
+                .replace("’", "'")
+                .strip("•-* ")
+                .strip()
             )
 
-            cleaned = cleaned[:260]
+            # keep short but meaningful
+            cleaned = " ".join(cleaned.split()[:20])
+
             bullets.append(cleaned)
 
     return bullets[:3]
 
 
+# =========================
+# CLEAN SUMMARY
+# =========================
+def clean_summary(summary):
+    summary = summary.replace("\n", " ").strip()
+
+    for bad in ["Here is", "This is", "Below is", "Summary:", "This summary"]:
+        summary = summary.replace(bad, "")
+
+    return " ".join(summary.split()[:35])
+
+
+# =========================
+# MAIN FUNCTION
+# =========================
 def generate_resume(job):
+
+    # 🔥 ALWAYS START FROM BASE
     resume = load_resume()
 
     # =========================================
-    # 🔥 1. DYNAMIC SUMMARY
+    # 🔥 1. SUMMARY (ONLY UPDATE FIELD)
     # =========================================
     try:
         summary = generate_summary(job)
-        summary = summary.replace("\n", " ").strip()
-
-        for bad in ["Here is", "This is", "Below is", "Summary:"]:
-            summary = summary.replace(bad, "")
-
-        resume["summary"] = summary
-
-    except Exception:
+        resume["summary"] = clean_summary(summary)
+    except:
         pass
 
     # =========================================
-    # 🔥 2. SKILLS (SAFE MERGE)
+    # 🔥 2. SKILLS (DO NOT MODIFY LIST)
     # =========================================
-    base_skills = resume["skills"]
-
-    job_text = job.get("description", "").lower()
-    extra_skills = []
-
-    if "kafka" in job_text:
-        extra_skills.append("Apache Kafka")
-    if "spark" in job_text:
-        extra_skills.append("Apache Spark")
-    if "airflow" in job_text:
-        extra_skills.append("Apache Airflow")
-
-    merged_skills = list(dict.fromkeys(base_skills + extra_skills))
-    resume["skills"] = ", ".join(merged_skills)
+    skills_list = resume["skills"][:]   # preserve original
+    resume["skills"] = ", ".join(skills_list)
 
     # =========================================
-    # 🔥 3. BULLET TAILORING (EXPERIENCE + PROJECTS)
+    # 🔥 3. EXPERIENCE (ONLY FIRST ROLE MODIFIED)
     # =========================================
     try:
         raw = tailor_resume(job)
-        ai_bullets = clean_bullets(raw)
+        bullets = clean_bullets(raw)
 
-        if len(ai_bullets) == 3:
+        if bullets:
+            resume["experience"][0]["bullets"] = bullets
 
-            # 🔹 EXPERIENCE
-            if resume.get("experience"):
-                for i, exp in enumerate(resume["experience"]):
-
-                    if i == 0:
-                        # Main experience → strongest tailoring
-                        exp["bullets"] = ai_bullets
-                    else:
-                        # Slight variation for realism
-                        exp["bullets"] = [
-                            b.replace("Developed", "Worked on")
-                             .replace("Built", "Implemented")
-                             .replace("Designed", "Contributed to")
-                            for b in ai_bullets
-                        ]
-
-            # 🔹 PROJECTS
-            if resume.get("projects"):
-                for proj in resume["projects"]:
-                    proj["bullets"] = [
-                        b.replace("Developed", "Built")
-                         .replace("Worked on", "Engineered")
-                         .replace("Contributed to", "Designed")
-                        for b in ai_bullets
-                    ]
-
-    except Exception:
+    except:
         pass
 
     # =========================================
-    # 🔥 4. RENDER TEMPLATE
+    # 🔥 4. DO NOT TOUCH PROJECTS / EDUCATION
+    # =========================================
+    # (this is key — keeps your base structure)
+
+    # =========================================
+    # 🔥 5. RENDER USING YOUR TEMPLATE
     # =========================================
     template = load_template()
-    return template.render(**resume)
+    html = template.render(**resume)
+
+    return html
