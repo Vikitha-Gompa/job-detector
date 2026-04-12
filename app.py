@@ -1,176 +1,254 @@
 import streamlit as st
 import json
+from datetime import datetime
 
 from app.collectors.greenhouse import fetch_greenhouse
-from app.collectors.web_scraper import fetch_job_from_url
 from app.filters.job_filter import filter_jobs
 from app.scoring.matcher import rank_jobs
 from app.tailoring.resume_generator import generate_resume
-from app.tailoring.pdf_generator import html_to_pdf
+from app.collectors.web_scraper import fetch_job_from_url
+from app.utils.location_parser import is_us_location
 
 
-# 🔥 Page config
-st.set_page_config(page_title="AI Resume Tailor", layout="wide")
+# =========================
+# STORAGE
+# =========================
+def load_saved_jobs():
+    try:
+        with open("data/saved_jobs.json") as f:
+            return json.load(f)
+    except:
+        return []
 
-# 🔥 Sidebar
-st.sidebar.title("⚙️ Settings")
-st.sidebar.write("AI Resume Tailoring System")
 
-# 🔥 Header
-st.markdown("""
-# 🚀 AI Resume Tailoring System
-### Generate job-specific resumes instantly
-""")
+def save_job(job, status):
+    saved = load_saved_jobs()
 
-st.divider()
+    if any(j["job_url"] == job["job_url"] for j in saved):
+        return
 
-# Load companies
-with open("data/companies.json") as f:
-    companies = json.load(f)
+    job["status"] = status
+    job["updated_at"] = str(datetime.now())
 
-# =========================================================
-# 🔗 SECTION 1 — MANUAL INPUT (URL + JD TEXT)
-# =========================================================
+    saved.append(job)
 
-st.subheader("🧠 Manual Job Input")
+    with open("data/saved_jobs.json", "w") as f:
+        json.dump(saved, f, indent=2)
 
-tab1, tab2 = st.tabs(["🔗 Paste Job URL", "📄 Paste Job Description"])
 
-# -------------------------
-# 🔹 TAB 1: URL INPUT
-# -------------------------
-with tab1:
-    job_url = st.text_input("Enter job URL")
+# =========================
+# CONFIG
+# =========================
+st.set_page_config(layout="wide")
+st.title("🚀 AI Resume Tailor")
 
-    if st.button("Fetch Job from URL"):
-        with st.spinner("Scraping job description..."):
-            job = fetch_job_from_url(job_url)
+
+# =========================
+# SIDEBAR
+# =========================
+page = st.sidebar.radio("Menu", ["Job Search", "Manual Job", "Saved Jobs", "Dashboard"])
+
+location_filter = st.sidebar.selectbox("Location", ["All", "US Only"])
+skill_filter = st.sidebar.text_input("Skill")
+
+
+# =========================
+# JOB SEARCH
+# =========================
+if page == "Job Search":
+
+    # =========================
+    # APPLY PANEL (TOP)
+    # =========================
+    if "apply_job" in st.session_state:
+        job = st.session_state["apply_job"]
+
+        st.success("🚀 Complete your application")
+
+        st.markdown(f"### {job['title']}")
+        st.write(f"{job['company']} • {job['location']}")
+
+        # ✅ MANUAL LINK ONLY (FIXED)
+        st.markdown(f"### 👉 [Click here to apply]({job['job_url']})")
+        st.info("Click the link above to apply, then come back and confirm.")
+
+        col1, col2 = st.columns(2)
+
+        if col1.button("✅ I Applied", key="confirm_apply"):
+            apply_time = datetime.now()
+
+            job["status"] = "applied"
+            job["applied_at"] = str(apply_time)
+
+            if "apply_start_time" in job:
+                start = datetime.fromisoformat(job["apply_start_time"])
+                job["apply_duration_sec"] = (apply_time - start).seconds
+
+            save_job(job, "applied")
+
+            del st.session_state["apply_job"]
+            st.rerun()
+
+        if col2.button("❌ Cancel", key="cancel_apply"):
+            del st.session_state["apply_job"]
+            st.rerun()
+
+        st.divider()
+
+    # =========================
+    # FETCH JOBS
+    # =========================
+    if st.button("Fetch Jobs"):
+        with open("data/companies.json") as f:
+            companies = json.load(f)
+
+        jobs = []
+        for board in companies.get("greenhouse", []):
+            jobs.extend(fetch_greenhouse(board))
+
+        st.session_state["jobs"] = jobs
+
+    # =========================
+    # DISPLAY JOBS
+    # =========================
+    if "jobs" in st.session_state:
+
+        jobs = st.session_state["jobs"]
+
+        filtered = []
+
+        for j in jobs:
+            if location_filter == "US Only":
+                if not is_us_location(j["location"]):
+                    continue
+
+            if skill_filter and skill_filter.lower() not in j["description"].lower():
+                continue
+
+            filtered.append(j)
+
+        ranked = rank_jobs(filter_jobs(filtered))
+
+        # ✅ REMOVE APPLIED JOBS
+        saved = load_saved_jobs()
+        applied_urls = [j["job_url"] for j in saved if j.get("status") == "applied"]
+        ranked = [j for j in ranked if j["job_url"] not in applied_urls]
+
+        st.subheader(f"🎯 Jobs available: {len(ranked)}")
+
+        for i, job in enumerate(ranked[:20]):
+
+            st.markdown(f"### {job['title']}")
+            st.write(f"{job['company']} • {job['location']}")
+
+            col1, col2, col3 = st.columns(3)
+
+            # Save
+            if col1.button("⭐ Save", key=f"save_{i}"):
+                save_job(job, "saved")
+                st.success("Saved!")
+
+            # Apply
+            if col2.button("🚀 Apply", key=f"apply_{i}"):
+                job["apply_start_time"] = str(datetime.now())
+                st.session_state["apply_job"] = job
+                st.rerun()
+
+            # Resume
+            if col3.button("✨ Resume", key=f"resume_{i}"):
+                html = generate_resume(job)
+                st.components.v1.html(html, height=400)
+
+            st.divider()
+
+
+# =========================
+# MANUAL JOB
+# =========================
+elif page == "Manual Job":
+
+    st.title("🔗 Manual Job Input")
+
+    tab1, tab2 = st.tabs(["🌐 URL", "📝 Paste JD"])
+
+    with tab1:
+        url = st.text_input("Paste Job URL")
+
+        if st.button("Fetch Job"):
+            job = fetch_job_from_url(url)
 
             if job:
-                st.session_state["manual_job"] = job
-                st.success("✅ Job extracted successfully!")
+                st.session_state["manual"] = job
+                st.success("Job fetched successfully")
             else:
-                st.error("❌ Failed to fetch job")
+                st.error("Failed to fetch job")
 
-# -------------------------
-# 🔹 TAB 2: RAW JD INPUT
-# -------------------------
-with tab2:
-    jd_text = st.text_area("Paste Job Description", height=250)
+    with tab2:
+        jd = st.text_area("Paste Job Description")
 
-    if st.button("Use This Job Description"):
-        if jd_text.strip():
-            st.session_state["manual_job"] = {
-                "title": "Custom Job",
-                "company": "Manual Input",
-                "location": "",
-                "description": jd_text,
-                "job_url": "",
-                "posted_at": "",
-                "source": "manual"
-            }
-            st.success("✅ Job description added!")
-        else:
-            st.warning("⚠️ Please paste job description")
+        if st.button("Use JD"):
+            if jd.strip():
+                st.session_state["manual"] = {
+                    "title": "Custom Job",
+                    "company": "Manual Entry",
+                    "location": "",
+                    "description": jd,
+                    "job_url": "manual"
+                }
+                st.success("JD loaded")
+            else:
+                st.warning("Paste job description")
 
-# -------------------------
-# 🔹 HANDLE MANUAL JOB
-# -------------------------
-if "manual_job" in st.session_state:
-    job = st.session_state["manual_job"]
+    if "manual" in st.session_state:
+        job = st.session_state["manual"]
 
-    st.divider()
-    st.subheader("🧾 Job Preview")
-
-    st.write(job["description"][:1000])
-
-    if st.button("✨ Generate Resume from Manual Input"):
-        with st.spinner("Generating resume..."):
-            resume_html = generate_resume(job)
-
-            st.success("✅ Resume generated!")
-
-            st.markdown("### 👀 Preview")
-            st.components.v1.html(resume_html, height=600, scrolling=True)
-
-            pdf_path = "output/manual_resume.pdf"
-            html_to_pdf(resume_html, pdf_path)
-
-            with open(pdf_path, "rb") as f:
-                st.download_button(
-                    "⬇️ Download PDF",
-                    f,
-                    file_name="resume.pdf",
-                    use_container_width=True
-                )
-
-# =========================================================
-# 🔍 SECTION 2 — AUTO JOB FETCH
-# =========================================================
-
-st.divider()
-st.subheader("🌐 Auto Job Fetch (Greenhouse)")
-
-if st.button("🔍 Fetch Jobs"):
-    with st.spinner("Fetching jobs..."):
-        all_jobs = []
-
-        for board in companies.get("greenhouse", []):
-            jobs = fetch_greenhouse(board)
-            all_jobs.extend(jobs)
-
-        st.session_state["jobs"] = all_jobs
-        st.success(f"✅ {len(all_jobs)} jobs fetched!")
-
-# -------------------------
-# 🔹 JOB LIST UI
-# -------------------------
-if "jobs" in st.session_state:
-    jobs = st.session_state["jobs"]
-
-    filtered = filter_jobs(jobs)
-    ranked = rank_jobs(filtered)
-
-    st.divider()
-
-    col1, col2 = st.columns([1, 2])
-
-    # LEFT PANEL
-    with col1:
-        st.subheader("📌 Select Job")
-
-        job_titles = [f"{j['title']} ({j['company']})" for j in ranked[:10]]
-        selected = st.selectbox("Choose a job", job_titles)
-
-        selected_job = ranked[job_titles.index(selected)]
-
-        st.markdown("### 🧾 Job Info")
-        st.write(f"**Title:** {selected_job['title']}")
-        st.write(f"**Company:** {selected_job['company']}")
-        st.write(f"**Location:** {selected_job['location']}")
-
-        st.markdown(f"[🔗 View Job Posting]({selected_job['job_url']})")
-
-    # RIGHT PANEL
-    with col2:
-        st.subheader("📄 Resume Generator")
+        st.subheader("🧾 Preview")
+        st.write(job["description"][:1000])
 
         if st.button("✨ Generate Resume"):
-            with st.spinner("Generating resume..."):
-                resume_html = generate_resume(selected_job)
+            html = generate_resume(job)
+            st.components.v1.html(html, height=500)
 
-                st.success("✅ Resume generated!")
 
-                st.markdown("### 👀 Preview")
-                st.components.v1.html(resume_html, height=600, scrolling=True)
+# =========================
+# SAVED JOBS
+# =========================
+elif page == "Saved Jobs":
 
-                pdf_path = "output/streamlit_resume.pdf"
-                html_to_pdf(resume_html, pdf_path)
+    st.title("📌 Saved Jobs")
 
-                with open(pdf_path, "rb") as f:
-                    st.download_button(
-                        "⬇️ Download PDF",
-                        f,
-                        file_name="resume.pdf",
-                        use_container_width=True
-                    )
+    saved = load_saved_jobs()
+
+    for i, job in enumerate(saved):
+
+        st.markdown(f"### {job['title']}")
+        st.write(f"{job['company']} • {job['location']}")
+        st.write(f"Status: {job['status']}")
+
+        col1, col2 = st.columns(2)
+
+        if col1.button("Interview", key=i):
+            saved[i]["status"] = "interview"
+
+        if col2.button("Rejected", key=str(i) + "r"):
+            saved[i]["status"] = "rejected"
+
+        st.divider()
+
+    with open("data/saved_jobs.json", "w") as f:
+        json.dump(saved, f, indent=2)
+
+
+# =========================
+# DASHBOARD
+# =========================
+elif page == "Dashboard":
+
+    st.title("📊 Dashboard")
+
+    saved = load_saved_jobs()
+
+    st.metric("Saved", len(saved))
+    st.metric("Applied", len([j for j in saved if j["status"] == "applied"]))
+    st.metric("Interview", len([j for j in saved if j["status"] == "interview"]))
+    st.metric("Rejected", len([j for j in saved if j["status"] == "rejected"]))
