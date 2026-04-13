@@ -1,100 +1,191 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+<meta charset="utf-8">
+<title>{{ name }} - Resume</title>
 <style>
+  @page {
+    size: A4;
+    margin: 0.45in;
+  }
 
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    font-size: 11px;   /* tighter */
-    line-height: 1.4;
-    word-spacing: 1px;
-}
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    color: #111;
+    font-size: 10.5pt;
+    line-height: 1.18;
+  }
 
-h1 {
-    margin-bottom: 2px;
-    font-size: 18px;
-}
+  h1 {
+    font-size: 18pt;
+    margin: 0 0 2px 0;
+    line-height: 1.05;
+    font-weight: 700;
+  }
 
-h2 {
+  h2 {
+    font-size: 11.5pt;
+    margin: 8px 0 3px 0;
+    padding-bottom: 1px;
     border-bottom: 1px solid #000;
-    font-size: 14px;
-    margin-top: 10px;
-    margin-bottom: 4px;
-}
+    line-height: 1.1;
+  }
 
-h3 {
-    margin-bottom: 2px;
-    font-size: 13px;
-}
+  h3 {
+    font-size: 10.8pt;
+    margin: 0;
+    line-height: 1.1;
+    font-weight: 700;
+  }
 
-p {
-    margin: 2px 0;
-}
+  p {
+    margin: 0 0 2px 0;
+  }
 
-ul {
-    margin: 2px 0 6px 15px;
+  ul {
+    margin: 2px 0 5px 16px;
     padding: 0;
-}
+  }
 
-li {
-    margin-bottom: 3px;
-}
+  li {
+    margin-bottom: 2px;
+  }
 
-.row {
-    display: flex;
-    justify-content: space-between;
-}
+  .header {
+    margin-bottom: 4px;
+  }
+
+  .title-line {
+    font-size: 10.5pt;
+    margin-bottom: 1px;
+  }
+
+  .contact-line {
+    font-size: 10pt;
+    margin-bottom: 2px;
+  }
+
+  .summary {
+    margin-top: 1px;
+  }
+
+  .skills {
+    font-size: 10pt;
+    line-height: 1.22;
+  }
+
+  .item {
+    margin-bottom: 2px;
+  }
+
+  .row {
+    overflow: hidden;
+    margin-bottom: 1px;
+  }
+
+  .left {
+    float: left;
+    width: 74%;
+  }
+
+  .right {
+    float: right;
+    width: 24%;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 10pt;
+  }
+
+  .clear {
+    clear: both;
+  }
+
+  .degree {
+    font-weight: 700;
+  }
+
+  .company-role {
+    font-weight: 700;
+  }
 </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
-<h1>{{name}}</h1>
-<p><b>{{title}}</b></p>
-<p>{{email}} | {{location}}</p>
+  <div class="header">
+    <h1>{{ name }}</h1>
+    <p class="title-line"><strong>{{ title }}</strong></p>
+    <p class="contact-line">
+      {{ email }}{% if phone %} | {{ phone }}{% endif %} | {{ location }}
+    </p>
+  </div>
 
-<!-- SUMMARY -->
-<p>{{summary}}</p>
+  {% if summary %}
+  <p class="summary">{{ summary }}</p>
+  {% endif %}
 
-<!-- SKILLS -->
-<h2>Skills</h2>
-<p>{{skills}}</p>
+  {% if skills %}
+  <h2>Skills</h2>
+  <p class="skills">{{ skills | join(", ") }}</p>
+  {% endif %}
 
-<!-- EXPERIENCE -->
-<h2>Experience</h2>
-{% for exp in experience %}
-<div class="row">
-    <p><b>{{exp.role}} — {{exp.company}}</b></p>
-    <p>{{exp.dates}}</p>
-</div>
+  {% if experience %}
+  <h2>Experience</h2>
+  {% for exp in experience %}
+    <div class="item">
+      <div class="row">
+        <div class="left company-role">{{ exp.role }} — {{ exp.company }}</div>
+        <div class="right">{{ exp.dates }}</div>
+      </div>
+      <div class="clear"></div>
 
-<ul>
-{% for b in exp.bullets %}
-<li>{{b}}</li>
+      {% if exp.bullets %}
+      <ul>
+        {% for b in exp.bullets[:3] %}
+        <li>{{ b }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if projects %}
+  <h2>Projects</h2>
+  {% for p in projects[:3] %}
+    <div class="item">
+      <h3>{{ p.name }}</h3>
+      {% if p.bullets %}
+      <ul>
+        {% for b in p.bullets[:2] %}
+        <li>{{ b }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if education %}
+  <h2>Education</h2>
+  {% for edu in education %}
+   <div class="row">
+    <div class="left">
+      <span class="degree">{{ edu.degree }}</span> - {{ edu.school }}
+    </div>
+    <div class="right">
+      {% if edu.graduation_date %}
+        {{ edu.graduation_date }}
+      {% elif edu.month and edu.year %}
+        {{ edu.month }} {{ edu.year }}
+      {% elif edu.year %}
+        {{ edu.year }}
+      {% endif %}
+    </div>
+  </div>
+  <div class="clear"></div>
 {% endfor %}
-</ul>
-{% endfor %}
-
-<!-- PROJECTS -->
-<h2>Projects</h2>
-{% for p in projects %}
-<h3>{{p.name}}</h3>
-<ul>
-{% for b in p.bullets %}
-<li>{{b}}</li>
-{% endfor %}
-</ul>
-{% endfor %}
-
-<!-- EDUCATION -->
-<h2>Education</h2>
-{% for edu in education %}
-<div class="row">
-    <p><b>{{edu.degree}}</b> - {{edu.school}}</p>
-    <p>{{edu.year}}</p>
-</div>
-{% endfor %}
+{% endif %}
 
 </body>
 </html>
